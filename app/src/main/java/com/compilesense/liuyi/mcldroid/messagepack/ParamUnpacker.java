@@ -17,6 +17,24 @@ import java.io.FileInputStream;
  */
 
 public class ParamUnpacker {
+    private final static String TAG = "ParamUnpacker";
+    public static void testModelInput(){
+        String paramFilePath = "/sdcard/Data_CaffeNet/model_param_fc7.msg";
+        float[] weight;           // weight parameter of network
+        float[] bias;                   // bias parameter of network
+        double time = System.currentTimeMillis();
+        ParamUnpacker paramUnpacker = new ParamUnpacker();
+        Log.d(TAG,"paramFilePath:"+paramFilePath);
+        Object[] objects = paramUnpacker.unpackFunction(paramFilePath, new Class[]{float[].class, float[].class});
+        weight = (float[]) objects[0];
+        bias = (float[]) objects[1];
+        Log.d(TAG,"--------------------------------------------");
+        Log.d(TAG,"完成参数加载,用时:"+(System.currentTimeMillis() - time));
+        Log.d(TAG,"参数大小: weight:"+(weight.length));
+        Log.d(TAG,"参数大小: bias:"+(bias.length));
+        Log.d(TAG,"--------------------------------------------");
+    }
+
     public Object[] unpackFunction(String paramFilePath, Class[] classTypes){
         Object[] objects = new Object[2];
         try {

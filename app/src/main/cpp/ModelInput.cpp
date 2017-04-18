@@ -2,12 +2,9 @@
 // Created by 神经元002 on 2017/4/6.
 //
 #include "ModelInput.h"
-#include <jni.h>
 #include <cstdlib>
 #include <fstream>
-//#include <MultiDimensionData.h>
 #include <msgpack.hpp>
-#include <MultiDimensionData.h>
 #include <sstream>
 
 using std::ifstream;
@@ -155,7 +152,6 @@ struct one_dimension_array_msgpack_visitor : msgpack::null_visitor{
 
 //全连接层 kernel 数据 weight[], bias[];
 void loadFullyConnectKernel(std::string filePath, MultiDimensionData<float> *MDDweight, MultiDimensionData<float> *MDDbias){
-
     ifstream binaryFstream(filePath, ios::in|ios::binary|ios::ate);
     size_t size = (size_t) binaryFstream.tellg();
     char* buff = new char[size];
@@ -171,7 +167,7 @@ void loadFullyConnectKernel(std::string filePath, MultiDimensionData<float> *MDD
     objW.convert(*vWeight);
     float * weightPtr = vWeight->data();
     MDDweight->setData(weightPtr, 1, 1, 1, vWeight->size());
-
+    LOGE("weightSize: %lu", MDDweight->totalSize());
     msgpack::unpacked resultBias;
     unpack(resultBias, buff, size, off);
     msgpack::object objB(resultBias.get());
@@ -179,9 +175,26 @@ void loadFullyConnectKernel(std::string filePath, MultiDimensionData<float> *MDD
     objB.convert(*vBias);
     float * biasPtr = vBias->data();
     MDDbias->setData(biasPtr, 1, 1, 1, vBias->size());
+    delete[] buff;
+}
+
+void loadFullyConnectKernel_v(std::string filePath, MultiDimensionData<float> *MDDweight, MultiDimensionData<float> *MDDbias){
+    ifstream binaryFstream(filePath, ios::in|ios::binary|ios::ate);
+    size_t size = (size_t) binaryFstream.tellg();
+    char* buff = new char[size];
+    binaryFstream.seekg(0, ios::beg);
+    binaryFstream.read(buff, size);
+    binaryFstream.close();
+
+    one_dimension_array_msgpack_visitor visitor( MDDweight );
+    std::size_t off = 0;
+    bool ret1 = msgpack::v2::parse(buff, size, off, visitor);
+    one_dimension_array_msgpack_visitor visitor2( MDDbias );
+    bool ret2 = msgpack::v2::parse(buff, size, off, visitor2);
 
     delete[] buff;
 }
+
 //卷积层 kernel 数据 weight[][][][], bias[];
 void loadConvolutionKernel(std::string filePath, MultiDimensionData<float> *weightMDD, MultiDimensionData<float> *biasMDD){
     ifstream binaryFstream(filePath, ios::in|ios::binary|ios::ate);
@@ -201,6 +214,22 @@ void loadConvolutionKernel(std::string filePath, MultiDimensionData<float> *weig
 }
 
 
+void loadTestTempData(std::string filePath, MultiDimensionData<float> *data){
+    ifstream binaryFstream(filePath, ios::in|ios::binary|ios::ate);
+    size_t size = (size_t) binaryFstream.tellg();
+    char* buff = new char[size];
+    binaryFstream.seekg(0, ios::beg);
+    binaryFstream.read(buff, size);
+    binaryFstream.close();
+
+    one_dimension_array_msgpack_visitor visitor(data );
+    std::size_t off = 0;
+    bool ret1 = msgpack::v2::parse(buff, size, off, visitor);
+
+    delete[] buff;
+}
+
+
 extern "C" {
 
 JNIEXPORT void JNICALL
@@ -209,7 +238,7 @@ Java_com_compilesense_liuyi_mcldroid_NativeTest_testModelInput(JNIEnv *env, jcla
     const char *filePath = env->GetStringUTFChars(filePath_, 0);
     MultiDimensionData<float> weight;
     MultiDimensionData<float> bias;
-    loadConvolutionKernel("/sdcard/cnn_model/Data_Cifar10/model_param_conv3.msg", &weight, &bias);
+    loadFullyConnectKernel_v("/sdcard/Data_CaffeNet/model_param_fc6.msg", &weight, &bias);
     env->ReleaseStringUTFChars(filePath_, filePath);
 }
 

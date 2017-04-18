@@ -25,4 +25,6 @@ public class NativeTest {
 //    static public native void testProtobuf(String filePath);
     static public native void testMsgPack(String filePath);
     static public native void testModelInput(String filePath);
+
+    static public native void lrnLayerTest();
 }

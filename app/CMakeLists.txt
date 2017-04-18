@@ -75,10 +75,10 @@ target_link_libraries( # Specifies the target library.
                        android
                        jnigraphics
                        #Nnpack
-                       /Users/shenjingyuan002/work/app-repo-android/MCldroid/app/src/main/JniLibs/libnnpack.a
-                       /Users/shenjingyuan002/work/app-repo-android/MCldroid/app/src/main/JniLibs/libnnpack_reference.a
-                       /Users/shenjingyuan002/work/app-repo-android/MCldroid/app/src/main/JniLibs/libnnpack_ukernels.a
-                       /Users/shenjingyuan002/work/app-repo-android/MCldroid/app/src/main/JniLibs/libpthreadpool.a
+                       /Users/shenjingyuan002/work/NNPACK/lib4android/libnnpack.a
+                       /Users/shenjingyuan002/work/NNPACK/lib4android/libnnpack_reference.a
+                       /Users/shenjingyuan002/work/NNPACK/lib4android/libnnpack_ukernels.a
+                       /Users/shenjingyuan002/work/NNPACK/lib4android/libpthreadpool.a
                        #protobuf
                        #/Users/shenjingyuan002/work/app-repo-android/MCldroid/app/src/main/JniLibs/libprotobuf-lite.a
                       )

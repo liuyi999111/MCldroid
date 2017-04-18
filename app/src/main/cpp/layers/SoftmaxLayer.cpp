@@ -11,7 +11,8 @@ void SoftmaxLayer::compute(MultiDimensionData<float> *inputData, MultiDimensionD
     size_t batch = inputData->get_n();
     size_t channel = inputData->get_c();
 //    softmaxNeon(inputData->data_ptr, outputData->data_ptr, batch, channel);
-    softmaxNnpack(inputData->data_ptr, outputData->data_ptr, batch, channel);
+//    softmaxNnpack(inputData->data_ptr, outputData->data_ptr, batch, channel);
+    softmaxC(inputData->data_ptr, outputData->data_ptr, batch, channel);
 }
 //输入与输出都是二维数据。
 void SoftmaxLayer::computeOutputShape(MultiDimensionData<float> *inputData, MultiDimensionData<float> *outputData){

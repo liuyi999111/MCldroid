@@ -17,9 +17,9 @@ Net net;
 #define DEBUG__RESULT
 #define DEBUG__LOG_TIME
 
-#undef DEBUG__
+//#undef DEBUG__
 #undef DEBUG__MEAN
-#undef DEBUG__RESULT
+//#undef DEBUG__RESULT
 #undef DEBUG__LOG_TIME
 
 void Net::forward(MultiDimensionData<float> *input, MultiDimensionData<float> *output){
@@ -182,7 +182,7 @@ Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_setupNet(JNIEnv *env, 
 
 
 JNIEXPORT void JNICALL
-Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_bitmapProcess(JNIEnv *env, jclass type,jobject bitmap) {
+Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_bitmapProcess(JNIEnv *env, jclass type, jobject bitmap) {
     AndroidBitmapInfo  info;
     void*              pixels;//数据
     int                ret;
@@ -191,16 +191,18 @@ Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_bitmapProcess(JNIEnv *
         LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
         return;
     }
-    logBitmapInfo(info);
+
     if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0) {
         LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
     }
-    pixels2MDData(&info ,pixels, &inputBitmapMap);
+
+//    pixels2MDData(&info ,pixels, &inputBitmapMap);
+
+    pixels2MDDataWithPreproccess(&info, pixels, &inputBitmapMap);
 
 #ifdef DEBUG__
     logMDData(&inputBitmapMap,"MCLdroid-bitmap-new");
 #endif
-
     AndroidBitmap_unlockPixels(env, bitmap);
 }
 

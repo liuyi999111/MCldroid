@@ -18,7 +18,8 @@ void softmaxNnpack(const float * input_pointer, float * output_pointer,
 
 void softmaxNeon(const float * input_pointer, float * output_pointer,
                  size_t input_n, size_t input_c);
-
+void softmaxC(const float * input_pointer, float * output_pointer,
+                  size_t input_n, size_t input_c);
 int meanPoolingC(float *output, float *input,
                  size_t input_n, size_t input_c,
                  size_t input_h, size_t input_w,

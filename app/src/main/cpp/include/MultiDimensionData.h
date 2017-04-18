@@ -106,6 +106,15 @@ public:
         return  (num_dimensions < 1) ? 1 : shape[3];
     }
 
+    void reShape(std::vector<size_t> shape_){
+        if (shape.capacity() >= shape_.size()){
+            shape = shape_;
+        } else{
+            shape.reserve(shape_.size());
+            shape = shape_;
+        }
+        num_dimensions = shape_.size();
+    }
 private:
     bool shouldRelease;
 };

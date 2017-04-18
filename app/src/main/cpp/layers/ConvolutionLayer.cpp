@@ -43,6 +43,9 @@ void ConvolutionLayer::releaseKernel() {
 
 void ConvolutionLayer::loadKernelNative(std::string filePath) {
     loadConvolutionKernel(filePath, &this->weight, &this->bias);
+    LOGD("加载kernel 的shape:");
+    LOGD("weight: %lu*%lu*%lu*%lu",weight.get_n(),weight.get_c(),weight.get_h(),weight.get_w());
+    LOGD("bias: %lu*%lu*%lu*%lu",bias.get_n(),bias.get_c(),bias.get_h(),bias.get_w());
     this->paramHadLoad = true;
 }
 
@@ -54,7 +57,7 @@ void ConvolutionLayer::compute(MultiDimensionData<float> *input, MultiDimensionD
     size_t pad_ = params.pad;
     size_t stride_h = params.stride_h;
     size_t stride_w = params.stride_w;
-
+    size_t group = params.group;
     //input
     size_t n_i = input->shape[0];//数量
     size_t c_i = input->shape[1];//通道
@@ -72,21 +75,45 @@ void ConvolutionLayer::compute(MultiDimensionData<float> *input, MultiDimensionD
     size_t h_o = (size_t) (ceil((h_i + 2 * pad_ - h_k) / ((float) (stride_h))) + 1);
     size_t w_o = (size_t) (ceil((w_i + 2 * pad_ - w_k) / ((float) (stride_w))) + 1);
     size_t c_o = n_k;
-//    float *inPtr = input->data_ptr;
+
     float *outPtr = new float[n_o * c_o * h_o * w_o];
     output->setData(outPtr, n_o, c_o, h_o, w_o);
 
-    //利用 stride 对 input 进行处理。
-    if (stride_h > 1){
-        h_i = h_i/stride_h;
+    if ( group == 1){
+
+        convNnpack(output->data_ptr, input->data_ptr, weight.data_ptr, bias.data_ptr,
+                   n_i, c_i, h_i, w_i,
+                   n_o, c_o, h_o, w_o,
+                   pad_,stride_h,h_k, w_k);
+        return;
     }
-    if (stride_w > 1){
-        w_i = w_i/stride_w;
+
+    //增加对 group 参数的支持
+    //1. 对kernel 和 input 进行分组;
+    const size_t cSize_out = h_o * w_o;//每一帧输入图片大小
+    const size_t cSize_in = h_i * w_i;
+    const size_t cSize_kernel = h_k * w_k;
+
+    const size_t input_chanel_per_group = c_i / group;//每一组 chanel 数量
+    const size_t output_chanel_per_group = c_o / group;
+
+    const size_t gSize_input = input_chanel_per_group * cSize_in;//每一组的大小
+    const size_t gSize_output = output_chanel_per_group * cSize_out;
+    const size_t gSize_kernel = output_chanel_per_group * input_chanel_per_group * cSize_kernel;
+    const size_t gSize_bias = output_chanel_per_group;
+
+
+    for(size_t i = 0 ; i < group; ++i){
+        float * tempKernel = &weight.data_ptr[i * gSize_kernel ];
+        float * tempInput = &input->data_ptr[i * gSize_input];
+        float * tempOutput = &outPtr[i * gSize_output];
+        float * tempBias = &bias.data_ptr[i * gSize_bias];
+
+        convNnpack(tempOutput, tempInput, tempKernel, tempBias,
+                   n_i, input_chanel_per_group, h_i, w_i,
+                   n_o, output_chanel_per_group, h_o, w_o,
+                   pad_, stride_h, h_k, w_k);
     }
-    convNnpack(output->data_ptr, input->data_ptr, weight.data_ptr, bias.data_ptr,
-               n_i, c_i, h_i, w_i,
-               n_o, c_o, h_o, w_o,
-               pad_,stride_h,h_k, w_k);
 
 }
 

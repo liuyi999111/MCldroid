@@ -97,7 +97,7 @@ void softmaxNeon(const float * input_pointer, float * output_pointer,
         size_t indexN = i * input_c;
         float sum = 0;
         for (int j = 0; j < input_c; ++ j){
-            float temp = powf(2.71828, input_pointer[indexN + j]);// NDK根据ABI优化过,效率比neon高。
+            float temp = powf(2.71828, input_pointer[indexN + j]);
             output_pointer[indexN + j] = temp;
             sum += temp;
         }
@@ -109,6 +109,24 @@ void softmaxNeon(const float * input_pointer, float * output_pointer,
                         (int)input_c, (1.0f/sum));
     }
 }
+
+void softmaxC(const float * input_pointer, float * output_pointer,
+                 size_t input_n, size_t input_c){
+
+    for (int i = 0; i < input_n; ++i){
+        size_t indexN = i * input_c;
+        float sum = 0;
+        for (int j = 0; j < input_c; ++ j){
+            float temp = powf(2.71828, input_pointer[indexN + j]);
+            output_pointer[indexN + j] = temp;
+            sum += temp;
+        }
+        for (int j = 0; j < input_c; ++ j){
+            output_pointer[indexN + j] /= sum;
+        }
+    }
+}
+
 
 void meanPooling(
         const float * input, float * output,
@@ -218,12 +236,14 @@ int convNnpackWithStride(
         size_t kernelSize_h, size_t kernelSize_w
 ){
     checkAndInitNnpack(__LINE__);
+
     enum nnp_convolution_algorithm algorithm = nnp_convolution_algorithm_auto;//卷积算法
     enum nnp_convolution_transform_strategy transform_strategy = nnp_convolution_transform_strategy_block_based;
     struct nnp_size input_size = {inputSize_h, inputSize_w };
     struct nnp_padding input_padding = {pad,pad,pad,pad};
     struct nnp_size kernel_size = {kernelSize_h, kernelSize_w};
     struct nnp_size output_subsampling = {stride, stride};
+
     nnp_convolution_inference(
             algorithm,
             transform_strategy,
@@ -253,37 +273,31 @@ int convNnpack(
         size_t kernelSize_h, size_t kernelSize_w
 ){
     checkAndInitNnpack(__LINE__);
-    if (stride == 1){
-        enum nnp_convolution_algorithm algorithm = nnp_convolution_algorithm_auto;//卷积算法
-        const struct nnp_padding input_padding = {pad, pad, pad, pad};
-        const struct nnp_size input_size ={ inputSize_h, inputSize_w };
-        const struct nnp_size kernel_size = { kernelSize_h, kernelSize_w };
-        const struct nnp_size output_size = {
-                .width = (input_padding.left + input_size.width + input_padding.right - kernel_size.width) + 1,
-                .height = (input_padding.top + input_size.height + input_padding.bottom - kernel_size.height) + 1
-        };
-        nnp_convolution_output(
-                algorithm,
-                batch_size, input_channels, output_channels,
-                input_size, input_padding, kernel_size,
-                input, kernel, bias, output,
-                nnp_activation_identity,
-                NULL,
-                threadpool,
-//            &computation_profile
-                NULL);
-    } else if (stride > 1){
-        size_t nSize_in = input_channels * inputSize_h * inputSize_w;
-        size_t nSize_out = output_channels * outputSize_h * outputSize_w;
-        for (int i = 0; i < batch_size; ++i) {
-            convNnpackWithStride(
-                    &output[i * nSize_out], &input[i * nSize_in], kernel, bias,
-                    input_channels, output_channels,
-                    pad, stride,
-                    inputSize_h, inputSize_w,
-                    kernelSize_h, kernelSize_w);
-        }
-    }
+
+    enum nnp_convolution_algorithm algorithm = nnp_convolution_algorithm_auto;//卷积算法
+    enum nnp_convolution_transform_strategy transform_strategy = nnp_convolution_transform_strategy_tuple_based;
+    struct nnp_size input_size = {inputSize_h, inputSize_w };
+    struct nnp_padding input_padding = {pad,pad,pad,pad};
+    struct nnp_size kernel_size = {kernelSize_h, kernelSize_w};
+    struct nnp_size output_subsampling = {stride, stride};
+
+    nnp_convolution_inference(
+            algorithm,
+            transform_strategy,
+            input_channels,
+            output_channels,
+            input_size,
+            input_padding,
+            kernel_size,
+            output_subsampling,
+            input,
+            kernel,
+            bias,
+            output,
+            nnp_activation_identity,
+            NULL,
+            threadpool,
+            NULL);
     return 0;
 }
 

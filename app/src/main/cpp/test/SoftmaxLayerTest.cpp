@@ -6,8 +6,6 @@
 #include <SoftmaxLayer.h>
 #include <stdlib.h>
 
-
-
 extern "C" {
 
 JNIEXPORT void JNICALL

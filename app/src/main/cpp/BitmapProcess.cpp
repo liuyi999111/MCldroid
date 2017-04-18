@@ -64,10 +64,7 @@ void pixels2MultiDimensionData(AndroidBitmapInfo * info, void *pixels, MultiDime
 }
 
 void pixels2MDData(AndroidBitmapInfo * info, void *pixels, MultiDimensionData<float> *data){
-
-
-
-    int c_ = 3;
+    const int c_ = 3;
     float * dataPtr = new float[1 * c_ * (info->width) * (info->height)];
     data->setData(dataPtr, 1, c_, info->height , info->width);
 
@@ -79,6 +76,26 @@ void pixels2MDData(AndroidBitmapInfo * info, void *pixels, MultiDimensionData<fl
             dataPtr[x] = line[x].red ;
             dataPtr[x + size] = line[x].green ;
             dataPtr[x + 2*size] = line[x].blue;
+        }
+        dataPtr = dataPtr + info->width;
+        pixels = (char *)pixels + info->stride;
+    }
+}
+
+
+void pixels2MDDataWithPreproccess(AndroidBitmapInfo * info, void *pixels, MultiDimensionData<float> *data){
+    const int c_ = 3;
+    float * dataPtr = new float[1 * c_ * (info->width) * (info->height)];
+    data->setData(dataPtr, 1, c_, info->height , info->width);
+
+    unsigned long size = info->height * info->width;//图片中每一通道的大小。
+
+    for (int y = 0; y < info->height; y++) {
+        argb * line = (argb *) pixels;
+        for (int x=0; x < info->width; x++) {
+            dataPtr[x] = line[x].red - 122.6789143406786f;
+            dataPtr[x + size] = line[x].green - 116.66876761696767f;
+            dataPtr[x + 2*size] = line[x].blue - 104.0079317889f;
         }
         dataPtr = dataPtr + info->width;
         pixels = (char *)pixels + info->stride;

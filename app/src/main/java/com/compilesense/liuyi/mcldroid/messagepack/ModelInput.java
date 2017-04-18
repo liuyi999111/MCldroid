@@ -7,6 +7,7 @@ import com.compilesense.liuyi.mcldroid.mcldroid.ActivationLayer;
 import com.compilesense.liuyi.mcldroid.mcldroid.BaseLayer;
 import com.compilesense.liuyi.mcldroid.mcldroid.ConvolutionLayer;
 import com.compilesense.liuyi.mcldroid.mcldroid.FullyConnectedLayer;
+import com.compilesense.liuyi.mcldroid.mcldroid.LRNLayer;
 import com.compilesense.liuyi.mcldroid.mcldroid.Layer;
 import com.compilesense.liuyi.mcldroid.mcldroid.NetFile;
 import com.compilesense.liuyi.mcldroid.mcldroid.PoolingLayer;
@@ -404,32 +405,30 @@ public class ModelInput {
             return true;
         }
         else if (type.equalsIgnoreCase("LRN")) {
-            Log.e(TAG,"LRN 不支持");
-//            String normRegion = null;
-//            int localSize = -1;
-//            double alpha = -1.0;
-//            double beta = -1.0;
-//            for (int i = 0; i < args.size(); ++i) {
-//                String tempArg = args.get(i);
-//                String tempValue = values.get(i);
-//                if (tempArg.equalsIgnoreCase("norm_region"))
-//                    normRegion = tempValue;
-//                else if (tempArg.equalsIgnoreCase("local_size"))
-//                    localSize = Integer.parseInt(tempValue);
-//                else if (tempArg.equalsIgnoreCase("alpha"))
-//                    alpha = Double.parseDouble(tempValue);
-//                else if (tempArg.equalsIgnoreCase("beta"))
-//                    beta = Double.parseDouble(tempValue);
-//                else
-//                    return false;
-//            }
-//            if (normRegion == null || localSize == -1 || alpha == -1.0 || beta == -1.0)
-//                return false;
+            Log.d(TAG,"处理 LRN 参数");
+            String normRegion = null;
+            int localSize = -1;
+            double alpha = -1.0;
+            double beta = -1.0;
+            for (int i = 0; i < args.size(); ++i) {
+                String tempArg = args.get(i);
+                String tempValue = values.get(i);
+                if (tempArg.equalsIgnoreCase("norm_region"))
+                    normRegion = tempValue;
+                else if (tempArg.equalsIgnoreCase("local_size"))
+                    localSize = Integer.parseInt(tempValue);
+                else if (tempArg.equalsIgnoreCase("alpha"))
+                    alpha = Double.parseDouble(tempValue);
+                else if (tempArg.equalsIgnoreCase("beta"))
+                    beta = Double.parseDouble(tempValue);
+                else
+                    return false;
+            }
+            if (normRegion == null || localSize == -1 || alpha == -1.0 || beta == -1.0)
+                return false;
 
-//            LocalResponseNormalization lrn =  new LocalResponseNormalization(localSize, alpha, beta,
-//                    normRegion, parallel, autoTuning, name, rootDir + tuningFolder);
-//            lastLayer = lrn;
-//            layers.add(lrn);
+            LRNLayer lrn =  new LRNLayer(name,localSize, (float) alpha, (float) beta);
+            layerList.add(lrn);
             return true;
         }
         else if (type.equalsIgnoreCase(NetFile.LayerType.FULLY_CONNECTED)) {
@@ -452,12 +451,16 @@ public class ModelInput {
 //            }
 //            loadIndex++;
 //            fcLayer.loadParam();
+
+
             fcLayer.loadParamNative();
+
+
             layerList.add(fcLayer);
             return true;
         }
         else if (type.equalsIgnoreCase("Accuracy")) {
-            Log.e(TAG,"Accuracy 不支持");
+//            Log.e(TAG,"Accuracy 不支持");
 //            String parametersFile = null;
 //            int topk = -1;
 //            for (int i = 0; i < args.size(); ++i) {

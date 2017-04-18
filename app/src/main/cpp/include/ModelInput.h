@@ -12,4 +12,5 @@ void loadFullyConnectKernel(std::string filePath, MultiDimensionData<float> *MDD
 
 void loadConvolutionKernel(std::string filePath, MultiDimensionData<float> *weightMDD, MultiDimensionData<float> *biasMDD);
 
+void loadTestTempData(std::string filePath, MultiDimensionData<float> *data);
 #endif //MCLDROID_MODELINPUT_H

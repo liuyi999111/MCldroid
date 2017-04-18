@@ -1,9 +1,11 @@
 package com.compilesense.liuyi.mcldroid;
 
+import android.app.ActivityManager;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.Drawable;
+import android.os.Debug;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -14,6 +16,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.compilesense.liuyi.mcldroid.mcldroid.MCLdroidNet;
+import com.compilesense.liuyi.mcldroid.messagepack.ParamUnpacker;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -30,6 +33,11 @@ public class MainActivity extends AppCompatActivity {
     static {
         System.loadLibrary("MCLdroid-lib");
     }
+
+    private static final int INPUT_PIC_FIX_SIZE_CAFFE_NET = 227;
+    private static final int INPUT_PIC_FIX_SIZE_CIFAR_10 = 32;
+
+    private int input_fix_size = INPUT_PIC_FIX_SIZE_CAFFE_NET;
 
     ImageView imageView;
     Bitmap bmp;
@@ -48,19 +56,34 @@ public class MainActivity extends AppCompatActivity {
         bt.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                long st = System.currentTimeMillis();
-//                NativeTest.testModelInput("sss");
+
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        displayBriefNativeMemory();
+                        long st = System.currentTimeMillis();
+//                        NativeTest.lrnLayerTest();
+
+                        MCLdroidNet.getInstance().setUpNet(MainActivity.this);
+                        MCLdroidNet.getInstance().testInputBitmap(bmp);
+
+                        Log.d("MainActivity","运行时间(ms):"+ (System.currentTimeMillis() - st));
+                        displayBriefNativeMemory();
+                    }
+                }).start();
 
 
+//                ParamUnpacker.testModelInput();
 
-                MCLdroidNet.getInstance().setUpNet(MainActivity.this);
+
+//                MCLdroidNet.getInstance().setUpNet(MainActivity.this);
 
 //                st = System.currentTimeMillis();
 ////                logBitmapData(bmp);
 
 
 //                MCLdroidNet.getInstance().testInputBitmap(bmp);
-                Log.d("MainActivity","计算时(ms):"+ (System.currentTimeMillis() - st));
+
 ////                bt.postDelayed(
 ////                        new Runnable() {
 ////                            @Override
@@ -78,13 +101,34 @@ public class MainActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
+        displayBriefMemory();
+
         try {
-            bmp = getBitmapFromCache(this);
+            Bitmap tmep = getBitmapFromCache(this);
+            bmp = Bitmap.createScaledBitmap(tmep, input_fix_size, input_fix_size, false);
             imageView.setImageBitmap(bmp);
 
         }catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    private void displayBriefMemory() {
+        final ActivityManager activityManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
+        ActivityManager.MemoryInfo info = new ActivityManager.MemoryInfo();
+        activityManager.getMemoryInfo(info);
+
+        Log.i(TAG,"系统剩余内存:"+(info.availMem >> 10)+"k");
+        Log.i(TAG,"系统是否处于低内存运行："+info.lowMemory);
+        Log.i(TAG,"当系统剩余内存低于"+info.threshold+"时就看成低内存运行");
+    }
+
+    private void displayBriefNativeMemory() {
+//        Debug.MemoryInfo memoryInfo = new Debug.MemoryInfo();
+//        Debug.getMemoryInfo(memoryInfo);
+        Log.i(TAG,"NativeHeapSize: "+(Debug.getNativeHeapSize()));
+        Log.i(TAG,"NativeHeapAllocatedSize："+Debug.getNativeHeapAllocatedSize());
+        Log.i(TAG,"NativeHeapFreeSize:"+Debug.getNativeHeapFreeSize());
     }
 
     void testBitmap(){
@@ -101,6 +145,8 @@ public class MainActivity extends AppCompatActivity {
      * which is packaged with this application.
      */
     public native String stringFromJNI();
+
+
 
     public static Bitmap getBitmapFromCache(Context context){
         try {

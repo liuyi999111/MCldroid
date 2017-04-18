@@ -53,6 +53,7 @@ public:
 
     ~ConvolutionLayer() {
         LOGD("ConvolutionLayer delete!");
+        releaseKernel();
     }
 
     void setKernel(float *weight, std::vector<size_t> weightShape,

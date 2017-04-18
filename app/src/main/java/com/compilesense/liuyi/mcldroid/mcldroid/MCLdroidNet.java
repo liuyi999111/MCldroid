@@ -40,7 +40,8 @@ public class MCLdroidNet {
                         }
             })
                     .resetStatus()
-                    .readNetFileFromAssert(context,"Cifar10_def.txt");
+//                    .readNetFileFromAssert(context,"Cifar10_def.txt");
+                    .readNetFileFromAssert(context,"CaffeNet_def.txt");
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -48,8 +49,7 @@ public class MCLdroidNet {
 
     public void testInputBitmap(Bitmap bitmap){
         bitmapProcess(bitmap);
-        getInputMean();
-//        getBitmapProcessed(bitmap);
+//        getInputMean();
         compute();
     }
 
