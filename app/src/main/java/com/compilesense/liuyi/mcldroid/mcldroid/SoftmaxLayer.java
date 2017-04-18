@@ -9,7 +9,7 @@ public class SoftmaxLayer extends BaseLayer {
     private static final String TAG = "SoftmaxLayer";
 
     public SoftmaxLayer(String name){
-        this.name = name;
+        super(name, LAYER_TYPE_SOFTMAX);
         nativeObject = createSoftmaxLayer(name);
     }
 
@@ -18,7 +18,6 @@ public class SoftmaxLayer extends BaseLayer {
         return null;
     }
 
-    @Override
     public void releaseLayer() {
 
     }

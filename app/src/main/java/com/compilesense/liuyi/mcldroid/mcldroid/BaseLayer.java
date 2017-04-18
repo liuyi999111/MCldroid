@@ -5,6 +5,14 @@ package com.compilesense.liuyi.mcldroid.mcldroid;
  */
 
 public abstract class BaseLayer implements Layer {
+
     protected String name;
-    public long nativeObject;
+    protected long nativeObject;
+    public final int LATER_TYPE;
+
+    protected BaseLayer(String name, int TYPE){
+        this.name = name;
+        this.LATER_TYPE = TYPE;
+    }
+
 }

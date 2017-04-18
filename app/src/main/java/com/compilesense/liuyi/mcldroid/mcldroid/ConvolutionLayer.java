@@ -7,6 +7,7 @@ import com.compilesense.liuyi.mcldroid.messagepack.ParamUnpacker;
 
 
 /**
+ * TODO 修改多分组时计算的正确性
  * Created by shenjingyuan002 on 2017/3/3.
  */
 
@@ -18,19 +19,17 @@ public class ConvolutionLayer extends BaseLayer {
     private boolean nonLinear;
     private String paramFilePath;
     private boolean paramHasLoad = false;
-    private float[][][][] weight;           // weight parameter of network
+    private float[][][][] weight;
     private int[] weightShape;
-    private float[] bias;                   // bias parameter of network
+    private float[] bias;
 
     public ConvolutionLayer(String name, int[] stride, int[] pad, int group, boolean nonLinear) {
-        this.name = name;
+        super(name, LAYER_TYPE_CONVOLUTION);
         this.stride = stride;
         this.pad = pad;
         this.group = group;
         this.nonLinear = nonLinear;
-
         nativeObject = createConvolutionLayer(name, stride, pad, group, nonLinear);
-        Log.d(TAG,"nativeObject:"+nativeObject);
     }
 
     public void releaseConvolutionLayer(){
@@ -91,12 +90,15 @@ public class ConvolutionLayer extends BaseLayer {
         return this;
     }
 
+    public void setNonLinear(){
+        setNonlinearType(nativeObject, 1);
+    }
+
     @Override
     public Object compute(Object input) {
         return null;
     }
 
-    @Override
     public void releaseLayer() {
         Log.d(TAG,"releaseLayer, name:"+ name + " , prt:"+ nativeObject);
         releaseConvolutionLayer();
@@ -127,6 +129,15 @@ public class ConvolutionLayer extends BaseLayer {
         return outPut;
     }
 
+    /**
+     * 创建 ConvolutionLayer 的 native 层对象。
+     * @param name 名称
+     * @param stride 步长
+     * @param pad 留白
+     * @param group 分组 (目前在 group > 1 时计算结果不正确)
+     * @param nonLinear 是否包含非线性部分
+     * @return
+     */
     private native long createConvolutionLayer(
             String name,
             int stride[],
@@ -138,5 +149,18 @@ public class ConvolutionLayer extends BaseLayer {
     private native void deleteConvolutionLayer(long nativeObject);
 
     private native void setKernel(long objPrt,float[] weight ,int[] weightShape,  float[] bias);
+
+    /**
+     * 加载 kernel
+     * @param objPrt native 层 c++ 类指针
+     * @param paramFilePath 存放 weight 和 bias 的文件路径
+     */
     private native void loadKernelNative(long objPrt, String paramFilePath);
+
+    /**
+     * 设置 convolution layer 的非线性部分
+     * @param objPtr
+     * @param type 目前只支持 ReLu
+     */
+    private native void setNonlinearType(long objPtr, int type);
 }

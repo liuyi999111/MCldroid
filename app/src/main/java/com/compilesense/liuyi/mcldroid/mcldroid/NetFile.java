@@ -31,5 +31,9 @@ public class NetFile {
         String GROUP = "group";
         String POOL = "pool";
         String KERNEL_SIZE ="kernel_size";
+        String NORM_REGION = "norm_region";
+        String LOCAL_SIZE = "local_size";
+        String ALPHA = "alpha";
+        String BETA = "beta";
     }
 }

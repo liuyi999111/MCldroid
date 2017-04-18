@@ -49,6 +49,16 @@ int convNnpack(
         size_t kernelSize_h, size_t kernelSize_w
 );
 
+int convNnpackWithReLu(
+        float * output, float * input, float * kernel, float * bias,
+        size_t batch_size, size_t input_channels,
+        size_t inputSize_h, size_t inputSize_w,
+        size_t output_batch_size, size_t output_channels,
+        size_t outputSize_h, size_t outputSize_w,
+        size_t pad, size_t stride,
+        size_t kernelSize_h, size_t kernelSize_w, int nonlinearType
+);
+
 void relu(float *input, size_t totalSize);
 //ai = 0.25
 void prelu(float *input, size_t totalSize);

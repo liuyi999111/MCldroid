@@ -301,6 +301,43 @@ int convNnpack(
     return 0;
 }
 
+int convNnpackWithReLu(
+        float * output, float * input, float * kernel, float * bias,
+        size_t batch_size, size_t input_channels,
+        size_t inputSize_h, size_t inputSize_w,
+        size_t output_batch_size, size_t output_channels,
+        size_t outputSize_h, size_t outputSize_w,
+        size_t pad, size_t stride,
+        size_t kernelSize_h, size_t kernelSize_w, int nonlinearType
+){
+    checkAndInitNnpack(__LINE__);
+    enum nnp_convolution_algorithm algorithm = nnp_convolution_algorithm_auto;//卷积算法
+    enum nnp_convolution_transform_strategy transform_strategy = nnp_convolution_transform_strategy_tuple_based;
+    struct nnp_size input_size = {inputSize_h, inputSize_w };
+    struct nnp_padding input_padding = {pad,pad,pad,pad};
+    struct nnp_size kernel_size = {kernelSize_h, kernelSize_w};
+    struct nnp_size output_subsampling = {stride, stride};
+
+    nnp_convolution_inference(
+            algorithm,
+            transform_strategy,
+            input_channels,
+            output_channels,
+            input_size,
+            input_padding,
+            kernel_size,
+            output_subsampling,
+            input,
+            kernel,
+            bias,
+            output,
+            nnp_activation_relu,
+            NULL,
+            threadpool,
+            NULL);
+    return 0;
+}
+
 void relu(float *input, size_t totalSize){
     if(input == NULL ){
         return;

@@ -5,14 +5,16 @@
 #ifndef CAFFEMODELINPUT_CONVOLUTIONLAYER_H
 #define CAFFEMODELINPUT_CONVOLUTIONLAYER_H
 
-#include <string>
-#include <vector>
-#include <MultiDimensionData.h>
-#include <BaseLayer.h>
 
+#include <MultiDimensionData.h>
+#include <string>
+#include <BaseLayer.h>
 
 class ConvolutionLayer : public BaseLayer{
 public:
+    //支持合并的非线性部分
+    enum NonlinearType{ Null=0, ReLu=1 };
+
     class Params {
     public:
         size_t group;
@@ -41,13 +43,13 @@ public:
     };
 
     ConvolutionLayer(const std::string &name, size_t stride, size_t pad, size_t group, bool nonLinear)
-            : BaseLayer(name), nonLinear(nonLinear), paramHadLoad(false){
-        params.setParams(pad, stride, 1, 1);
+            : BaseLayer(name), nonLinear(nonLinear), nonlinearType(Null), paramHadLoad(false){
+        params.setParams(pad, stride, 1, group);
         kernelSholdRelease = true;
     }
 
     ConvolutionLayer(const std::string &name, ConvolutionLayer::Params params, bool nonLinear)
-            : BaseLayer(name), params(params), nonLinear(nonLinear){
+            : BaseLayer(name), params(params), nonLinear(nonLinear), nonlinearType(Null){
         kernelSholdRelease = true;
     };
 
@@ -70,6 +72,11 @@ public:
      */
     void loadKernelNative(std::string filePath);
 
+    /**
+     * 支持的可合并的非线性部分 ReLu
+     */
+    void setNonLinear(NonlinearType type);
+
     void compute(MultiDimensionData<float> *input, MultiDimensionData<float> *output);
 
 protected:
@@ -78,6 +85,7 @@ protected:
 private:
     bool kernelSholdRelease;
     bool nonLinear; //是否有非线性部分
+    NonlinearType nonlinearType;
     ConvolutionLayer::Params params;
     bool paramHadLoad;
     MultiDimensionData<float> weight;

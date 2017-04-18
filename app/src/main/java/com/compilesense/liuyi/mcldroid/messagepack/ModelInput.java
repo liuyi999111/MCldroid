@@ -51,17 +51,6 @@ public class ModelInput {
         Log.d(TAG,"maxMemory:"+ maxMemory+", MAX_PARAM_SIZE:"+MAX_PARAM_SIZE);
     }
 
-    public void releaseLayers(){
-        if (layerList.size() > 0){
-            for (Layer l : layerList) {
-                if (l == null){
-                    continue;
-                }
-                l.releaseLayer();
-            }
-        }
-    }
-
     public ModelInput setLayersListener( IHandLayers layersListener){
         this.layersListener = layersListener;
         return this;
@@ -73,12 +62,12 @@ public class ModelInput {
     }
 
     public void readNetFileFromAssert (Context context, String fileName) throws Exception{
-//        fileName = "CaffeNet_def.txt";
         InputStream stream = context.getAssets().open(fileName);
         Log.d(TAG,"参数预解析");
         Log.d(TAG,"---------------------------------------------");
         Scanner s = new Scanner(stream);
         List<Long> paramSize = new ArrayList<>();
+        //TODO 在之前java 层读取较大 model 时内存限制,预读取一下,现在改为 native 层直接读取,应该不多余的步骤了。
         preParesNetFile(s, paramSize);
         s.close();
         stream.close();
@@ -168,34 +157,7 @@ public class ModelInput {
             String str = s.nextLine();
             str = str.trim();
             String strLow = str.toLowerCase();
-
             StringBuilder stringBuilder = new StringBuilder();
-//            if (strLow.startsWith("execution_mode")) {
-//                strLow = strLow.substring(14);
-//                strLow = deriveStr(strLow);
-//                if (strLow.equals("parallel"))
-//                    parallel = true;
-//                else if (strLow.equals("sequential"))
-//                    parallel = false;
-//                else {
-//                    Log.d("CNNdroid", "Error: execution_mode is not specified correctly in the network structure definition file");
-//                    throw new Exception("CNNdroid execution mode is not specified correctly.");
-//                }
-//                necessaryDefinition[0] = true;
-//            }else if (strLow.startsWith("auto_tuning")){
-//                strLow = strLow.substring(11);
-//                strLow = deriveStr(strLow);
-//                if (strLow.equals("on"))
-//                    autoTuning = true;
-//                else if (strLow.equals("off"))
-//                    autoTuning = false;
-//                else {
-//                    Log.d("CNNdroid", "Error: auto_tuning is not specified correctly in the network structure definition file");
-//                    throw new Exception("CNNdroid auto-tuning is not specified correctly.");
-//                }
-//                necessaryDefinition[1] = true;
-//            }
-
             if (strLow.startsWith(NetFile.RootType.LAYER)) {
                 ++layerNum;
                 stringBuilder.append(
@@ -217,9 +179,9 @@ public class ModelInput {
             }
         }
 
-        if (layerNum == layerList.size()){
-            layersListener.handLayers(layerNum, layerList);
-        }
+
+        layersListener.handLayers(layerNum, layerList);
+
     }
 
     //取:后, " " 中的参数值
@@ -325,8 +287,6 @@ public class ModelInput {
             }
         }
 
-        Log.d(TAG,"layer num: " + layerNum+", layer name: " + name+", layer type:" + type);
-
         //处理卷积层。
         if (type.equalsIgnoreCase(NetFile.LayerType.CONVOLUTION)) {
             String parametersFile = null;
@@ -349,7 +309,7 @@ public class ModelInput {
             }
             if (parametersFile == null || pad == -1 || stride == -1 || group == -1)
                 return false;
-            Log.d(TAG,"处理 conv 参数: "+"pad:"+pad+",stride:"+stride+",group:"+group);
+//            Log.d(TAG,"处理 conv 参数: "+"pad:"+pad+",stride:"+stride+",group:"+group);
             ConvolutionLayer convolutionLayer =
                     new ConvolutionLayer(
                             name,
@@ -359,15 +319,7 @@ public class ModelInput {
                             false
                     );
             convolutionLayer.setParamPath(root+parametersFile);
-//            if (loadAtStart[loadIndex]){
-
-
-//                convolutionLayer.loadParam();
             convolutionLayer.loadParamNative();
-
-
-//            }
-//            loadIndex++;
             layerList.add(convolutionLayer);
             return true;
         }
@@ -392,7 +344,6 @@ public class ModelInput {
             }
             if (pool == null || pad == -1 || stride == -1 || kernelSize == -1)
                 return false;
-            Log.d(TAG,"处理 pool 参数");
             //处理 pool params
             int poolingType;
             if (pool.equals("max")){
@@ -404,8 +355,7 @@ public class ModelInput {
             layerList.add(poolingLayer);
             return true;
         }
-        else if (type.equalsIgnoreCase("LRN")) {
-            Log.d(TAG,"处理 LRN 参数");
+        else if (type.equalsIgnoreCase(NetFile.LayerType.LRN)) {
             String normRegion = null;
             int localSize = -1;
             double alpha = -1.0;
@@ -413,13 +363,13 @@ public class ModelInput {
             for (int i = 0; i < args.size(); ++i) {
                 String tempArg = args.get(i);
                 String tempValue = values.get(i);
-                if (tempArg.equalsIgnoreCase("norm_region"))
+                if (tempArg.equalsIgnoreCase(NetFile.LayerParams.NORM_REGION))
                     normRegion = tempValue;
-                else if (tempArg.equalsIgnoreCase("local_size"))
+                else if (tempArg.equalsIgnoreCase(NetFile.LayerParams.LOCAL_SIZE))
                     localSize = Integer.parseInt(tempValue);
-                else if (tempArg.equalsIgnoreCase("alpha"))
+                else if (tempArg.equalsIgnoreCase(NetFile.LayerParams.ALPHA))
                     alpha = Double.parseDouble(tempValue);
-                else if (tempArg.equalsIgnoreCase("beta"))
+                else if (tempArg.equalsIgnoreCase(NetFile.LayerParams.BETA))
                     beta = Double.parseDouble(tempValue);
                 else
                     return false;
@@ -443,19 +393,9 @@ public class ModelInput {
             }
             if (parametersFile == null)
                 return false;
-//            Log.d(TAG,"处理 FullyConnected 参数");
             FullyConnectedLayer fcLayer = new FullyConnectedLayer(name, false);
             fcLayer.setParamPath(root+parametersFile);
-//            if (loadAtStart[loadIndex]){
-//                fcLayer.loadParam();
-//            }
-//            loadIndex++;
-//            fcLayer.loadParam();
-
-
             fcLayer.loadParamNative();
-
-
             layerList.add(fcLayer);
             return true;
         }
@@ -485,28 +425,26 @@ public class ModelInput {
         else if (type.equalsIgnoreCase(NetFile.LayerType.SOFT_MAX)) {
             if (args.size() != 0) return false;
 
-            Log.d(TAG,"处理 Softmax 参数");
             SoftmaxLayer softmaxLayer = new SoftmaxLayer(name);
             layerList.add(softmaxLayer);
             return true;
         }
+
         else if (type.equalsIgnoreCase(NetFile.LayerType.RELU)) {
-            Log.d(TAG,"处理 ReLU 参数");
+            /**
+             * 如果 relu 之前的层是 convolution layer 或者是 fully connect layer
+             * 则可以将这部分非线性计算直接添加到前面的层中
+             * 目前性能提升并不明显!
+             */
+//            BaseLayer lastLayer = layerList.get(layerList.size() - 1);
+//            if (lastLayer.LATER_TYPE == Layer.LAYER_TYPE_CONVOLUTION){
+//                ConvolutionLayer layer = (ConvolutionLayer) lastLayer;
+//                layer.setNonLinear();
+//                return true;
+//            }
+
             ActivationLayer activationLayer = new ActivationLayer(name, ActivationLayer.TYPE_RELU);
             layerList.add(activationLayer);
-//            if (parallel) {
-//                if (lastLayer instanceof Convolution) {
-//                    ((Convolution) lastLayer).setNonLinearType(Convolution.NonLinearType.RectifiedLinearUnit);
-//                    return true;
-//                }
-//                else if (lastLayer instanceof FullyConnected) {
-//                    ((FullyConnected) lastLayer).setNonLinearType(FullyConnected.NonLinearType.RectifiedLinearUnit);
-//                    return true;
-//                }
-//            }
-//            NonLinear nl = new NonLinear(name, NonLinear.NonLinearType.RectifiedLinearUnit);
-//            lastLayer = nl;
-//            layers.add(nl);
             return true;
         }
         else

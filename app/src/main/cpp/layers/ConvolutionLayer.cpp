@@ -49,6 +49,12 @@ void ConvolutionLayer::loadKernelNative(std::string filePath) {
     this->paramHadLoad = true;
 }
 
+
+void ConvolutionLayer::setNonLinear(NonlinearType type){
+    nonLinear = true;
+    nonlinearType = type;
+}
+
 /**
  * group 为1,
  */
@@ -79,8 +85,14 @@ void ConvolutionLayer::compute(MultiDimensionData<float> *input, MultiDimensionD
     float *outPtr = new float[n_o * c_o * h_o * w_o];
     output->setData(outPtr, n_o, c_o, h_o, w_o);
 
-    if ( group == 1){
-
+    if (group == 1){
+        if (nonLinear){
+            convNnpackWithReLu(output->data_ptr, input->data_ptr, weight.data_ptr, bias.data_ptr,
+                               n_i, c_i, h_i, w_i,
+                               n_o, c_o, h_o, w_o,
+                               pad_,stride_h,h_k, w_k, 1);
+            return;
+        }
         convNnpack(output->data_ptr, input->data_ptr, weight.data_ptr, bias.data_ptr,
                    n_i, c_i, h_i, w_i,
                    n_o, c_o, h_o, w_o,
@@ -109,6 +121,13 @@ void ConvolutionLayer::compute(MultiDimensionData<float> *input, MultiDimensionD
         float * tempOutput = &outPtr[i * gSize_output];
         float * tempBias = &bias.data_ptr[i * gSize_bias];
 
+        if (nonLinear){
+            convNnpackWithReLu(tempOutput, tempInput, tempKernel, tempBias,
+                       n_i, input_chanel_per_group, h_i, w_i,
+                       n_o, output_chanel_per_group, h_o, w_o,
+                       pad_, stride_h, h_k, w_k, 1);
+            continue;
+        }
         convNnpack(tempOutput, tempInput, tempKernel, tempBias,
                    n_i, input_chanel_per_group, h_i, w_i,
                    n_o, output_chanel_per_group, h_o, w_o,
@@ -171,7 +190,7 @@ Java_com_compilesense_liuyi_mcldroid_mcldroid_ConvolutionLayer_createConvolution
             name,
             (unsigned int)stride[0],
             (unsigned int)pad[0],
-            group,
+            (size_t) group,
             nonLinear
     );
     env->ReleaseStringUTFChars(name_,name);
@@ -232,6 +251,17 @@ Java_com_compilesense_liuyi_mcldroid_mcldroid_ConvolutionLayer_loadKernelNative(
     ConvolutionLayer *objectPrt = (ConvolutionLayer *) objectPrt_;
     objectPrt->loadKernelNative(path);
     env->ReleaseStringUTFChars(filePath,path);
+}
+
+//本地加载参数
+JNIEXPORT void JNICALL
+Java_com_compilesense_liuyi_mcldroid_mcldroid_ConvolutionLayer_setNonlinearType(
+        JNIEnv *env, jobject instance,
+        jlong objectPrt_,
+        jint nonlinearType
+){
+    ConvolutionLayer *objectPrt = (ConvolutionLayer *) objectPrt_;
+    objectPrt->setNonLinear(ConvolutionLayer::ReLu);
 }
 
 #ifdef __cplusplus

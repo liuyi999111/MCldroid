@@ -15,11 +15,11 @@ public class FullyConnectedLayer extends BaseLayer {
     private boolean nonLinear;
     private String paramFilePath;
     private boolean paramHasLoad = false;
-    private float[] weight;           // weight parameter of network
-    private float[] bias;                   // bias parameter of network
+    private float[] weight;
+    private float[] bias;
 
     public FullyConnectedLayer(String name, boolean nonLinear){
-        this.name = name;
+        super(name, LAYER_TYPE_FULLY_CONNECTED);
         this.nonLinear = nonLinear;
         this.nativeObject = createNativeObject(name, nonLinear);
     }
@@ -69,7 +69,6 @@ public class FullyConnectedLayer extends BaseLayer {
         return null;
     }
 
-    @Override
     public void releaseLayer() {
 //        releaseFcLayer();
     }

@@ -14,6 +14,7 @@ public class PoolingLayer extends BaseLayer {
     public static final int TYPE_MEAN = 2;
 
     public PoolingLayer(String name, int type, int pad, int stride, int kernelSize){
+        super(name, LAYER_TYPE_POOLING);
         nativeObject = createPoolingLayerNative(name, type, pad, stride, kernelSize);
     }
     @Override
@@ -21,7 +22,6 @@ public class PoolingLayer extends BaseLayer {
         return null;
     }
 
-    @Override
     public void releaseLayer() {
 
     }

@@ -87,8 +87,6 @@ public class MCLdroidNet {
         return outPut;
     }
 
-    native void addLayer(long nativeObject);
-
     native void setupNet(long[] nativeObjectArray);
 
     native void bitmapProcess(Bitmap bitmap);
@@ -96,6 +94,4 @@ public class MCLdroidNet {
     native void compute();
 
     native void setInputMean(float[] mean,int[] meanShape);
-
-    native void getBitmapProcessed(Bitmap bitmap);
 }

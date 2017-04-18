@@ -159,6 +159,7 @@ Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_setInputMean(JNIEnv *e
 JNIEXPORT void JNICALL
 Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_compute(JNIEnv *env, jobject instance) {
     if (inputBitmapMap.data_ptr == NULL){
+        LOGE("inputBitmapMap.data_ptr == NULL");
         return;
     }
     MultiDimensionData<float> outPut;
@@ -166,11 +167,6 @@ Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_compute(JNIEnv *env, j
 }
 
 
-JNIEXPORT void JNICALL
-Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_addLayer(JNIEnv *env, jobject instance,
-                                                                   jlong nativeObject) {
-//    net.addLayer((BaseLayer *) nativeObject);
-}
 
 JNIEXPORT void JNICALL
 Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_setupNet(JNIEnv *env, jobject instance,
@@ -199,33 +195,7 @@ Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_bitmapProcess(JNIEnv *
 //    pixels2MDData(&info ,pixels, &inputBitmapMap);
 
     pixels2MDDataWithPreproccess(&info, pixels, &inputBitmapMap);
-
-#ifdef DEBUG__
-    logMDData(&inputBitmapMap,"MCLdroid-bitmap-new");
-#endif
     AndroidBitmap_unlockPixels(env, bitmap);
 }
 
-JNIEXPORT void JNICALL
-Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_getBitmapProcessed(JNIEnv *env,
-                                                                             jobject instance,
-                                                                             jobject bitmap) {
-
-    AndroidBitmapInfo  info;
-    void*              pixels;//数据
-    int                ret;
-
-    if ((ret = AndroidBitmap_getInfo(env, bitmap, &info)) < 0) {
-        LOGE("AndroidBitmap_getInfo() failed ! error=%d", ret);
-        return;
-    }
-
-    if ((ret = AndroidBitmap_lockPixels(env, bitmap, &pixels)) < 0) {
-        LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
-    }
-
-    multiDimensionData2Pixels(&info, pixels, &inputBitmapMap);
-    AndroidBitmap_unlockPixels(env, bitmap);
-
-}
 }
