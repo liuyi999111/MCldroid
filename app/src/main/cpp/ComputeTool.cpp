@@ -122,6 +122,10 @@ void softmaxC(const float * input_pointer, float * output_pointer,
             sum += temp;
         }
         for (int j = 0; j < input_c; ++ j){
+            if(isinf(output_pointer[indexN + j])){
+                output_pointer[indexN + j] = 1;
+                continue;
+            }
             output_pointer[indexN + j] /= sum;
         }
     }
@@ -368,40 +372,48 @@ void relu(float *input, size_t totalSize){
     }
 }
 
-//ai = 0.25
-void prelu(float *input, size_t totalSize){
-    const float P = 0.25f;
+void prelu(float *input, size_t n_i, size_t c_i, size_t h_i, size_t  w_i, float *param){
+
 
     if(input == NULL ){
         return;
     }
-    int num = (int) totalSize;
-    //一个向量寄存器可128位装4个32位 float。共有16个
-    const int numVector = num / 4;
-    int left = num % 4;
-    int batchIndex = numVector;
-    int index = 0;
 
-    float * data = input;
-    while(batchIndex > 0){
-        batchIndex--;
-        float32x4_t vector = vld1q_f32(data + index);//v
-        float32x4_t vectorAbs = vabsq_f32(vector);//|v|
-        float32x4_t vectorSub = vsubq_f32(vector, vectorAbs);// v - |v|
-        float32x4_t vectorTemp1 = vmulq_n_f32(vectorSub, P * 0.5f);//(v - |v|) * 0.5 * ai
-        float32x4_t vectorAdd = vaddq_f32(vector, vectorAbs);// v + |v|
-        float32x4_t vectorTemp2 = vmulq_n_f32(vectorAdd, 0.5f);
-        float32x4_t result = vaddq_f32(vectorTemp1, vectorTemp2);
-        vst1q_f32(data + index, result);
-        index += 4;
+    const size_t cSize = h_i * w_i;
+    const size_t nSize = c_i * cSize;
+
+    for (int n = 0; n < n_i; ++n){
+        for (int c = 0; c < c_i; ++c) {
+            const float P = param[c];
+            //一个向量寄存器可128位装4个32位 float。共有16个
+            const int numVector = (int) cSize / 4;
+            int left = (int) cSize % 4;
+            int batchIndex = numVector;
+            int index = 0;
+
+            float * data = &input[n * nSize + c * cSize];
+            while(batchIndex > 0){
+                batchIndex--;
+                float32x4_t vector = vld1q_f32(data + index);//v
+                float32x4_t vectorAbs = vabsq_f32(vector);//|v|
+                float32x4_t vectorSub = vsubq_f32(vector, vectorAbs);// v - |v|
+                float32x4_t vectorTemp1 = vmulq_n_f32(vectorSub, P * 0.5f);//(v - |v|) * 0.5 * ai
+                float32x4_t vectorAdd = vaddq_f32(vector, vectorAbs);// v + |v|
+                float32x4_t vectorTemp2 = vmulq_n_f32(vectorAdd, 0.5f);
+                float32x4_t result = vaddq_f32(vectorTemp1, vectorTemp2);
+                vst1q_f32(data + index, result);
+                index += 4;
+            }
+
+            while(left > 0){
+                left--;
+                float temp = data[index];
+                data[index] = (temp > 0) ? temp : temp * P;
+                index++;
+            }
+        }
     }
 
-    while(left > 0){
-        left--;
-        float temp = data[index];
-        data[index] = (temp > 0) ? temp : temp * P;
-        index++;
-    }
 }
 
 void tanh(float *input, size_t totalSize){

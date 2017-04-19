@@ -13,7 +13,8 @@ class ActivationLayer : public BaseLayer{
 public:
     enum Type {ReLU,PReLU,TanH,Abs};
     ActivationLayer(const std::string name, Type type_)
-            : BaseLayer(name),type(type_) { };
+            : BaseLayer(name),type(type_) , paramHadLoad(false){ };
+    void loadParamsNative(std::string filePath);
     void compute(MultiDimensionData<float> *input);
     void compute(MultiDimensionData<float> *input, MultiDimensionData<float> *output){
         compute(input);
@@ -26,6 +27,8 @@ protected:
     }
 private:
     Type type;
+    bool paramHadLoad;
+    MultiDimensionData<float> params;
 };
 
 

@@ -17,7 +17,7 @@ Net net;
 #define DEBUG__RESULT
 #define DEBUG__LOG_TIME
 
-//#undef DEBUG__
+#undef DEBUG__
 #undef DEBUG__MEAN
 //#undef DEBUG__RESULT
 #undef DEBUG__LOG_TIME
@@ -56,7 +56,8 @@ void Net::forward(MultiDimensionData<float> *input, MultiDimensionData<float> *o
         }
 
 #ifdef DEBUG__
-        std::string title = layerPtr->getName();
+        std::string title  = "det1_";
+        title.append(layerPtr->getName());
         title.append("_input");
         logMDData(input, title.data());
 #endif
@@ -64,7 +65,8 @@ void Net::forward(MultiDimensionData<float> *input, MultiDimensionData<float> *o
         layerPtr->compute(input, output);//计算
 
 #ifdef DEBUG__
-        title = layerPtr->getName();
+        title = "det1_";
+        title.append(layerPtr->getName());
         title.append("_output");
         logMDData(output, title.data());
 
@@ -82,7 +84,7 @@ void Net::forward(MultiDimensionData<float> *input, MultiDimensionData<float> *o
     }
 
 #ifdef DEBUG__RESULT
-    std::string title = "net_output";
+    std::string title = "det1_net_output";
     logMDData(output, title.data());
 #endif
 }
@@ -94,9 +96,6 @@ void meanInput(MultiDimensionData<float> *input, MultiDimensionData<float> *mean
     size_t nSize = input->get_c()*cSize;
     size_t h = input->get_h();
     size_t w = input->get_w();
-
-//    size_t h_mean = mean->get_h();
-//    size_t w_mean = mean->get_w();
 
     float *dataPtr = input->data_ptr;
     float *meanPtr = mean->data_ptr;
@@ -192,9 +191,8 @@ Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_bitmapProcess(JNIEnv *
         LOGE("AndroidBitmap_lockPixels() failed ! error=%d", ret);
     }
 
-//    pixels2MDData(&info ,pixels, &inputBitmapMap);
-
-    pixels2MDDataWithPreproccess(&info, pixels, &inputBitmapMap);
+    pixels2MDData(&info ,pixels, &inputBitmapMap);
+//    pixels2MDDataWithPreproccess(&info, pixels, &inputBitmapMap);
     AndroidBitmap_unlockPixels(env, bitmap);
 }
 

@@ -4,7 +4,7 @@
 
 #include "ActivationLayer.h"
 #include <ComputeTool.h>
-
+#include <ModelInput.h>
 
 void ActivationLayer::compute(MultiDimensionData<float> *input) {
     switch (type){
@@ -12,7 +12,8 @@ void ActivationLayer::compute(MultiDimensionData<float> *input) {
             relu(input->data_ptr, input->totalSize());
             break;
         case PReLU:
-            prelu(input->data_ptr, input->totalSize());
+            prelu(input->data_ptr, input->get_n(),input->get_c(),input->get_h(),input->get_w(),
+                  params.data_ptr);
             break;
         case TanH:
             tanh(input->data_ptr, input->totalSize());
@@ -21,6 +22,22 @@ void ActivationLayer::compute(MultiDimensionData<float> *input) {
             abs(input->data_ptr, input->totalSize());
             break;
     }
+}
+
+void ActivationLayer::loadParamsNative(std::string filePath) {
+    switch (type){
+        case ReLU:
+            break;
+        case PReLU:
+            loadPReLuParams(filePath, &params);
+            paramHadLoad = true;
+            break;
+        case TanH:
+            break;
+        case Abs:
+            break;
+    }
+
 }
 
 #ifdef __cplusplus
@@ -56,6 +73,18 @@ Java_com_compilesense_liuyi_mcldroid_mcldroid_ActivationLayer_createActivationLa
     env->ReleaseStringUTFChars(name_, name);
     return (jlong) ptr;
 }
+
+JNIEXPORT void JNICALL
+Java_com_compilesense_liuyi_mcldroid_mcldroid_ActivationLayer_loadParamsNative(JNIEnv *env,
+                                                                               jclass type_,
+                                                                               jlong objectPrt_,
+                                                                               jstring filePath) {
+    const char * path = env->GetStringUTFChars(filePath,NULL);
+    ActivationLayer *objectPrt = (ActivationLayer *) objectPrt_;
+    objectPrt->loadParamsNative(path);
+    env->ReleaseStringUTFChars(filePath, path);
+}
+
 
 #ifdef __cplusplus
 }

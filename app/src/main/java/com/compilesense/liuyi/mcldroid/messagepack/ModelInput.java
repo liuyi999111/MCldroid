@@ -85,14 +85,10 @@ public class ModelInput {
     //主要是检查参数文件的大小
     private void preParesNetFile(Scanner s, List<Long> paramSize) throws Exception{
 
-        int line = 0;
         while (s.hasNextLine()) {
             String str = s.nextLine();
             str = str.trim();
             String strLow = str.toLowerCase();
-
-//            Log.d(TAG,"line " +line+" :" +strLow);
-
 
             if (strLow.startsWith(NetFile.RootType.ROOT_DIRECTORY)) {
 
@@ -116,12 +112,12 @@ public class ModelInput {
                 if (pf.exists())
                     paramSize.add(pf.length());
                 else {
-                    Log.e("CNNdroid", "Error: Missing parameters file \"" + str + "\"");
+                    String temp = root + fName;
+                    Log.e("CNNdroid", "Error: Missing parameters file \"" + temp + "\"");
                     throw new Exception("CNNdroid parameter file does not exist.");
                 }
 
             }
-            line++;
         }
 
         if (root.equals("")) {
@@ -310,6 +306,12 @@ public class ModelInput {
             if (parametersFile == null || pad == -1 || stride == -1 || group == -1)
                 return false;
 //            Log.d(TAG,"处理 conv 参数: "+"pad:"+pad+",stride:"+stride+",group:"+group);
+
+            //跳过 conv4-2
+            if (name.equals("conv4-2")){
+                return true;
+            }
+
             ConvolutionLayer convolutionLayer =
                     new ConvolutionLayer(
                             name,
@@ -444,6 +446,25 @@ public class ModelInput {
 //            }
 
             ActivationLayer activationLayer = new ActivationLayer(name, ActivationLayer.TYPE_RELU);
+            layerList.add(activationLayer);
+            return true;
+        }
+
+        else if (type.equalsIgnoreCase(NetFile.LayerType.PRELU)){
+            String parametersFile = null;
+            for (int i = 0; i < args.size(); ++i) {
+                String tempArg = args.get(i);
+                String tempValue = values.get(i);
+                if (tempArg.equalsIgnoreCase(NetFile.LayerParams.PARAM_FILE))
+                    parametersFile = tempValue;
+                else
+                    return false;
+            }
+            if (parametersFile == null)
+                return false;
+            ActivationLayer activationLayer = new ActivationLayer(name, ActivationLayer.TYPE_PRELU);
+            activationLayer.setParamsFilePath(root+parametersFile)
+                    .loadParams();
             layerList.add(activationLayer);
             return true;
         }

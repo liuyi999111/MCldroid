@@ -16,6 +16,7 @@ public class NetFile {
     public interface LayerType{
         String CONVOLUTION = "convolution";
         String RELU = "relu";
+        String PRELU = "prelu";
         String POOLING = "pooling";
         String LRN = "lrn";
         String FULLY_CONNECTED = "fullyconnected";

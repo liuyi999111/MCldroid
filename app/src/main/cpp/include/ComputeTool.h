@@ -61,7 +61,7 @@ int convNnpackWithReLu(
 
 void relu(float *input, size_t totalSize);
 //ai = 0.25
-void prelu(float *input, size_t totalSize);
+void prelu(float *input, size_t n_i, size_t c_i, size_t h_i, size_t  w_i, float *param);
 void tanh(float *input, size_t totalSize);
 void abs(float *input, size_t totalSize);
 

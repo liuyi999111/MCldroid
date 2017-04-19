@@ -1,0 +1,74 @@
+root_directory: "/sdcard/Data_Det1/"
+
+layer {
+  type: "Convolution"
+  name: "conv1"
+  parameters_file: "model_param_conv1.msg"
+  pad:0
+  stride:1
+  group:1
+}
+layer {
+  type: "PReLU"
+  name: "PReLU1"
+  parameters_file: "model_param_PReLu1.msg"
+}
+layer {
+  type: "Pooling"
+  name: "pool1"
+  pool: "max"
+  kernel_size: 2
+  pad: 0
+  stride: 2
+}
+
+layer {
+  type: "Convolution"
+  name: "conv2"
+  parameters_file: "model_param_conv2.msg"
+  pad: 0 
+  stride: 1
+  group: 1
+}
+layer {
+  type: "PReLU"
+  name: "PReLU2"
+  parameters_file: "model_param_PReLu2.msg"
+}
+
+layer {
+  type: "Convolution"
+  name: "conv3"
+  parameters_file: "model_param_conv3.msg"
+  pad: 0 
+  stride: 1
+  group: 1
+}
+layer {
+  type: "PReLU"
+  name: "PReLU3"
+  parameters_file: "model_param_PReLu3.msg"
+}
+
+
+layer {
+  type: "Convolution"
+  name: "conv4-1"
+  parameters_file: "model_param_conv4-1.msg"
+  pad: 0 
+  stride: 1
+  group: 1
+}
+
+layer {
+  type: "Convolution"
+  name: "conv4-2"
+  parameters_file: "model_param_conv4-2.msg"
+  pad: 0 
+  stride: 1
+  group: 1
+}
+layer {
+  type: "Softmax"
+  name: "prob1"
+}

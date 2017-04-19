@@ -36,8 +36,9 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int INPUT_PIC_FIX_SIZE_CAFFE_NET = 227;
     private static final int INPUT_PIC_FIX_SIZE_CIFAR_10 = 32;
+    private static final int INPUT_PIC_FIX_SIZE_DET_1 = 12;
 
-    private int input_fix_size = INPUT_PIC_FIX_SIZE_CAFFE_NET;
+    private int input_fix_size = INPUT_PIC_FIX_SIZE_DET_1;
 
     ImageView imageView;
     Bitmap bmp;
@@ -65,9 +66,11 @@ public class MainActivity extends AppCompatActivity {
 //                        NativeTest.lrnLayerTest();
 
                         MCLdroidNet.getInstance().setUpNet(MainActivity.this);
+                        Log.d("MainActivity","加载时间(ms):"+ (System.currentTimeMillis() - st));
+                        st = System.currentTimeMillis();
                         MCLdroidNet.getInstance().testInputBitmap(bmp);
 
-                        Log.d("MainActivity","运行时间(ms):"+ (System.currentTimeMillis() - st));
+                        Log.d("MainActivity","计算时间(ms):"+ (System.currentTimeMillis() - st));
                         displayBriefNativeMemory();
                     }
                 }).start();

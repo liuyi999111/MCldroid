@@ -41,7 +41,8 @@ public class MCLdroidNet {
             })
                     .resetStatus()
 //                    .readNetFileFromAssert(context,"Cifar10_def.txt");
-                    .readNetFileFromAssert(context,"CaffeNet_def.txt");
+//                    .readNetFileFromAssert(context,"CaffeNet_def.txt");
+                    .readNetFileFromAssert(context,"det1.txt");
         }catch (Exception e){
             e.printStackTrace();
         }

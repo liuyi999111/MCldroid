@@ -213,6 +213,18 @@ void loadConvolutionKernel(std::string filePath, MultiDimensionData<float> *weig
     delete[] buff;
 }
 
+void loadPReLuParams(std::string filePath, MultiDimensionData<float> *params){
+    ifstream binaryFstream(filePath, ios::in|ios::binary|ios::ate);
+    size_t size = (size_t) binaryFstream.tellg();
+    char* buff = new char[size];
+    binaryFstream.seekg(0, ios::beg);
+    binaryFstream.read(buff, size);
+    binaryFstream.close();
+    std::size_t off = 0;
+    one_dimension_array_msgpack_visitor visitor(params);
+    bool ret1 = msgpack::v2::parse(buff, size, off, visitor);
+    delete[] buff;
+}
 
 void loadTestTempData(std::string filePath, MultiDimensionData<float> *data){
     ifstream binaryFstream(filePath, ios::in|ios::binary|ios::ate);
@@ -228,6 +240,7 @@ void loadTestTempData(std::string filePath, MultiDimensionData<float> *data){
 
     delete[] buff;
 }
+
 
 
 extern "C" {

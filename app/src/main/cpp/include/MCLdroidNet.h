@@ -8,10 +8,10 @@
 
 #include <vector>
 #include <BaseLayer.h>
-
 class Net {
 public:
     Net():layers(NULL),layerIndex(-1),layerSize(0){};
+
     void setUpNet( long long *layers, size_t layerSize){
         if (layers == NULL || layerSize <= 0){
             return;
@@ -20,6 +20,7 @@ public:
         this->layerSize = layerSize;
         this->layerIndex = 0;
     };
+
     void forward(MultiDimensionData<float> *input, MultiDimensionData<float> *output);
 
     void reStart(){
