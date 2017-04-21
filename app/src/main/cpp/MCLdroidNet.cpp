@@ -5,12 +5,12 @@
 #include <BitmapProcess.h>
 #include "MCLdroidNet.h"
 #include <logUtil.h>
-#include <math.h>
+#include <ComputeTool.h>
 #include <stdlib.h>
 
 MultiDimensionData<float> inputBitmapMap;
 Net net;
-
+Net_Tree * net_tree = NULL;
 
 #define DEBUG__
 #define DEBUG__MEAN
@@ -19,8 +19,89 @@ Net net;
 
 #undef DEBUG__
 #undef DEBUG__MEAN
-//#undef DEBUG__RESULT
+#undef DEBUG__RESULT
 #undef DEBUG__LOG_TIME
+
+void copyMDData(MultiDimensionData<float> *dst, MultiDimensionData<float> *src){
+    size_t size = src->totalSize();
+    float * temp = new float[size];
+    copyData(temp, src->data_ptr, size);
+    dst->setData(temp, src->shape);
+}
+
+void deriveLayer(Net_Tree *net,BaseLayer * layer, MultiDimensionData<float> * input, MultiDimensionData<float> ** outputArray ){
+#ifdef DEBUG__
+    LOGD("deriveLayer: %s",layer->getName().data());
+    std::string title = "det2_";
+    title.append(layer->getName()).append("_in");
+    logMDData(input, title.data());
+#endif
+
+#ifdef DEBUG__LOG_TIME
+    double st = now_ms();
+#endif
+    MultiDimensionData<float> * output = outputArray[net->indexOutPut];
+    layer->compute(input, output);
+
+#ifdef DEBUG__LOG_TIME
+    LOGD("deriveLayer: %s compute time: %f", layer->getName().data(), now_ms() - st );
+#endif
+
+#ifdef DEBUG__
+    std::string title2 = "det2_";
+    title2.append(layer->getName()).append("_out");
+    logMDData(output, title2.data());
+#endif
+
+    size_t num_nextLayer = layer->num_nextLayer();
+
+    if (num_nextLayer == 0){//网络的一个终点
+        net->outputLayers[ net->indexOutPut ] = layer;
+        net->indexOutPut ++;
+
+    } else if (num_nextLayer == 1){//没有分支向前
+
+        if (output->data_ptr != NULL){
+            input->releaseData();
+            input->setData(output->data_ptr, output->shape);
+            output->setData(NULL,1,1,1,1);
+        }
+
+        deriveLayer(net, layer->getNextLayer(0), input, outputArray);
+
+    } else if ( num_nextLayer > 1){//有分支向前
+
+        if (output->data_ptr != NULL){
+            input->releaseData();
+            input->setData(output->data_ptr, output->shape);
+            output->setData(NULL,1,1,1,1);
+        }
+
+        for (int i = 0; i < layer->num_nextLayer(); ++i){
+            MultiDimensionData<float> temp;
+            if (i > 0){
+                copyMDData(&temp, input);
+            } else {
+                temp.setData(input->data_ptr, input->shape);
+            }
+
+            deriveLayer(net, layer->getNextLayer(i), &temp, outputArray);
+        }
+
+    } else {
+        LOGE("Error: num_nextLayer=%lu",num_nextLayer);
+    }
+
+}
+
+void Net_Tree::forward(MultiDimensionData<float> *input, MultiDimensionData<float> **output,
+                       size_t num_netOutput) {
+    if (netHeader == NULL || num_netOutput <= 0){
+        return;
+    }
+    BaseLayer * currentLayer = netHeader;
+    deriveLayer(this, currentLayer, input, output);
+}
 
 void Net::forward(MultiDimensionData<float> *input, MultiDimensionData<float> *output){
     if (layers == NULL || layerSize <= 0){
@@ -38,10 +119,6 @@ void Net::forward(MultiDimensionData<float> *input, MultiDimensionData<float> *o
 #ifdef DEBUG__
 
         LOGD("---------------------compute :%s------------------------",layerPtr->getName().data());
-
-//        if (layerPtr->getName().compare("pool2") == 0){
-//            LOGD("debug");
-//        }
 
         st = now_ms();
 #endif
@@ -195,5 +272,45 @@ Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_bitmapProcess(JNIEnv *
 //    pixels2MDDataWithPreproccess(&info, pixels, &inputBitmapMap);
     AndroidBitmap_unlockPixels(env, bitmap);
 }
+
+
+JNIEXPORT void JNICALL
+Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_setupNetTree(JNIEnv *env, jobject instance,
+                                                                       jlong netHeader_,
+                                                                       jint numNetOutput,
+                                                                       jint numLayer) {
+    if (net_tree == NULL){
+        net_tree = new Net_Tree;
+    }
+    net_tree->setUp((BaseLayer *) netHeader_, (size_t) numLayer, (size_t) numNetOutput);
+}
+
+JNIEXPORT void JNICALL
+Java_com_compilesense_liuyi_mcldroid_mcldroid_MCLdroidNet_computeTree(JNIEnv *env, jobject instance) {
+    if (inputBitmapMap.data_ptr == NULL){
+        LOGE("inputBitmapMap.data_ptr == NULL");
+        return;
+    }
+    size_t numOutput = net_tree->getNumOutput();
+    MultiDimensionData<float> * outPut[numOutput];
+    for (int i = 0; i < numOutput; ++i) {
+        outPut[i] = new MultiDimensionData<float>();
+    }
+    net_tree->forward(&inputBitmapMap, outPut, numOutput);
+    for (int i = 0; i < numOutput; ++i) {
+        delete  outPut[i];
+    }
+}
+
+JNIEXPORT void JNICALL
+Java_com_compilesense_liuyi_mcldroid_mcldroid_BaseLayer_addNextLayerNative(JNIEnv *env,
+                                                                           jobject instance,
+                                                                           jlong nativeObject,
+                                                                           jlong nextLayer) {
+
+    BaseLayer * baseLayer = (BaseLayer *) nativeObject;
+    baseLayer->addNextLayer((BaseLayer *) nextLayer);
+}
+
 
 }

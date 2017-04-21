@@ -1,0 +1,99 @@
+root_directory: "/sdcard/Data_Det2/"
+allocated_ram: 1
+net_output: "tree" 
+
+layer {
+  type: "Convolution"
+  name: "conv1"
+  parameters_file: "model_param_conv1.msg"
+  pad: 0
+  stride: 1
+  group: 1
+}
+
+layer {
+  type: "PReLU"
+  name: "prelu1"
+  parameters_file: "model_param_prelu1.msg"
+}
+
+layer {
+  type: "Pooling"
+  name: "pool1"
+  pool: "max"
+  kernel_size: 3
+  stride: 2
+  pad: 0
+}
+
+layer {
+  type: "Convolution"
+  name: "conv2"
+  parameters_file: "model_param_conv2.msg"
+  pad:0
+  stride: 1
+  group: 1
+}
+
+layer {
+  type: "PReLU"
+  name: "prelu2"
+  parameters_file: "model_param_prelu2.msg"
+}
+
+layer {
+  name: "pool2"
+  type: "Pooling"
+  pool: "max"
+  kernel_size: 3
+  stride: 2
+  pad:0
+}
+
+layer {
+  name: "conv3"
+  type: "Convolution"
+  parameters_file: "model_param_conv3.msg"
+  pad:0
+  stride: 1
+  group: 1
+}
+
+layer {
+  type: "PReLU"
+  name: "prelu3"
+  parameters_file: "model_param_prelu3.msg"
+}
+
+layer {
+  type: "FullyConnected"
+  name: "fc4"
+  parameters_file: "model_param_conv4.msg"
+}
+
+layer {
+  name: "prelu4"
+  type: "PReLU"
+  parameters_file: "model_param_prelu4.msg"
+  branch_off: 2
+}
+
+layer {
+  type: "FullyConnected"
+  name: "fc5-1"
+  parameters_file: "model_param_conv5-1.msg"
+  branch: 0
+}
+
+layer {
+  type: "FullyConnected"
+  name: "fc5-2"
+  parameters_file: "model_param_conv5-2.msg"
+  branch: 1
+}
+
+layer {
+  type: "Softmax"
+  name: "prob1"
+  branch: 0
+}

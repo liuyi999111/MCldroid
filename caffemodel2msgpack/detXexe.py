@@ -1,7 +1,7 @@
 # .caffemodel file path:
-MODEL_FILE = '/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/model/det1.caffemodel'
+MODEL_FILE = '/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/model/det2.caffemodel'
 # .prototxt file path:
-MODEL_NET = '/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/model/det1.prototxt'
+MODEL_NET = '/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/model/det2.prototxt'
 # Saving path:
 SAVE_TO = '/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/msgpack/'
 
@@ -28,7 +28,7 @@ transformer = caffe.io.Transformer({'data': net.blobs['data'].data.shape})
 transformer.set_raw_scale('data', 255)
 transformer.set_transpose('data', (2,0,1)) 
 
-im = caffe.io.load_image("/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/test_12x12.jpg")
+im = caffe.io.load_image("/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/test_24x24.jpg")
 net.blobs['data'].data[...] = transformer.preprocess('data', im)
 # net.blobs['data'].reshape(1, 3, 12, 12)
 
@@ -42,11 +42,8 @@ print prob
 # print net.blobs['data'].data[0].shape
 # print net.blobs['data'].data[0]
 
-# print "conv1 output"
-# print net.blobs['conv1'].data[0].shape
-# print net.blobs['conv1'].data[0]
+print "conv5-2 output"
+print net.blobs['conv5-2'].data[0].shape
+print net.blobs['conv5-2'].data[0]
 
-# conv4-1
-print "conv4-1 output"
-print net.blobs['conv4-1'].data[0].shape
-print net.blobs['conv4-1'].data[0]
+

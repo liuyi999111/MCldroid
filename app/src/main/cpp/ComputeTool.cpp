@@ -7,6 +7,32 @@
 #include <nnpack.h>
 #include <arm_neon.h>
 #include <math.h>
+#include <string.h>
+
+void copyData(float * dst, float * src, size_t size){
+    memcpy(dst, src, size * sizeof(float));
+}
+
+void copyDataNeon(float * dst, float * src, size_t size){
+    if (dst == NULL || src == NULL || size <= 0){
+        return;
+    }
+
+    size_t numVector = size / 4;
+    size_t left = size % 4;
+    size_t index = 0;
+    while(numVector > 0){
+        numVector--;
+        float32x4_t vector = vld1q_f32(src + index);
+        vst1q_f32(dst + index, vector);
+        index += 4;
+    }
+    while(left > 0){
+        left--;
+        dst[index] = src[index];
+        index++;
+    }
+}
 
 pthreadpool_t threadpool = NULL;
 bool hadInitNnpack = false;//是否已经启动NNPACK

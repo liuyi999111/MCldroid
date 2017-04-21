@@ -1,9 +1,9 @@
 # .caffemodel file path:
-MODEL_FILE = '/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/model/det1.caffemodel'
+MODEL_FILE = '/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/model/det2.caffemodel'
 # .prototxt file path:
-MODEL_NET = '/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/model/det1.prototxt'
+MODEL_NET = '/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/model/det2.prototxt'
 # Saving path:
-SAVE_TO = '/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/msgpack/'
+SAVE_TO = '/Users/shenjingyuan002/work/app-repo-android/MCldroid/caffemodel2msgpack/Data_det2/'
 
 # Set True if you want to get parameters:
 GET_PARAMS = True

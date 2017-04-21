@@ -22,6 +22,7 @@ public class MCLdroidNet {
     }
 
     private List<BaseLayer> layerList = new ArrayList<>();
+    private BaseLayer treeHeader = null;
 
     public void setUpNet(Context context){
         try {
@@ -38,11 +39,17 @@ public class MCLdroidNet {
                                 setupNet(nativeObjArray);
                             }
                         }
-            })
+
+                        @Override
+                        public void handTreeNetHeader(BaseLayer header, int numNetOutput, int numLayer) {
+                            treeHeader = header;
+                            setupNetTree(header.nativeObject, numNetOutput, numLayer);
+                        }
+                    })
                     .resetStatus()
 //                    .readNetFileFromAssert(context,"Cifar10_def.txt");
 //                    .readNetFileFromAssert(context,"CaffeNet_def.txt");
-                    .readNetFileFromAssert(context,"det1.txt");
+                    .readNetFileFromAssert(context,"det2.txt");
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -51,7 +58,13 @@ public class MCLdroidNet {
     public void testInputBitmap(Bitmap bitmap){
         bitmapProcess(bitmap);
 //        getInputMean();
-        compute();
+
+        if (treeHeader == null){
+            compute();
+        }else {
+            computeTree();
+        }
+
     }
 
     //对于 cifar10 需要对输入进行处理。
@@ -94,5 +107,9 @@ public class MCLdroidNet {
 
     native void compute();
 
+    native void computeTree();
+
     native void setInputMean(float[] mean,int[] meanShape);
+
+    native void setupNetTree(long header, int numNetOutput, int numLayer);
 }

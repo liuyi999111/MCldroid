@@ -4,7 +4,8 @@
 
 #ifndef MCLDROID_COMPUTETOOL_H
 #define MCLDROID_COMPUTETOOL_H
-#include <cwchar>
+void copyData(float * dst, float * src, size_t size);
+void copyDataNeon(float * dst, float * src, size_t size);
 
 bool initNnpack();
 

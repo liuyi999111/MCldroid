@@ -11,12 +11,32 @@
 class BaseLayer {
 public:
     BaseLayer() : name("baseLayer") { }
-    BaseLayer(const std::string &name) : name(name) { }
+    BaseLayer(const std::string &name) : name(name), nextLayers(), indexNextLayers(0) { }
     void setName(const std::string &name){
         this->name = name;
     }
     std::string getName(){
         return name;
+    }
+    void addNextLayer(BaseLayer * nextLayer){
+        nextLayers.push_back( (long long) nextLayer);
+    }
+    size_t num_nextLayer(){
+        return nextLayers.size();
+    }
+    BaseLayer * getNextLayer(int index){
+        if (index < 0 || index > num_nextLayer()){
+            return NULL;
+        }
+        return (BaseLayer *) nextLayers[index];
+    }
+    BaseLayer * getNextLayerInOrder(){
+        BaseLayer * result = NULL;
+        if (indexNextLayers < num_nextLayer()){
+            result = (BaseLayer *) nextLayers[indexNextLayers];
+            indexNextLayers ++;
+        }
+        return result;
     }
     /**
      * 网络中每一层的计算。
@@ -28,5 +48,7 @@ protected:
      */
     virtual void computeOutputShape(MultiDimensionData<float> *input, MultiDimensionData<float> * output) = 0;
     std::string name;
+    std::vector<long long> nextLayers;
+    size_t indexNextLayers;
 };
 #endif //CAFFEMODELINPUT_BASELAYER_H

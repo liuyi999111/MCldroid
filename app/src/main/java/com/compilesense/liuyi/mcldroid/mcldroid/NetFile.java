@@ -11,6 +11,8 @@ public class NetFile {
         String EXECUTION_MODE ="execution_mode";
         String AOTO_TUNING = "auto_tuning";
         String LAYER = "layer";
+        String NET_OUTPUT= "net_output";
+        String NET_OUTPUT_TREE = "tree";
     }
 
     public interface LayerType{
@@ -36,5 +38,8 @@ public class NetFile {
         String LOCAL_SIZE = "local_size";
         String ALPHA = "alpha";
         String BETA = "beta";
+
+        String BRANCH = "branch";
+        String BRANCH_OFF = "branch_off";
     }
 }

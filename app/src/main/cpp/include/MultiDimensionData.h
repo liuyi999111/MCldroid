@@ -47,6 +47,7 @@ public:
             LOGD("~MultiDimensionData data_ptr don't release");
         }
     }
+
     void setData(dataType * data_ptr, size_t n, size_t c ,size_t h, size_t w, bool shouldRelease = true){
         this->data_ptr = data_ptr;
         if (shape.capacity() >= 4){
@@ -116,6 +117,8 @@ public:
         num_dimensions = shape_.size();
     }
 private:
+
+
     bool shouldRelease;
 };
 

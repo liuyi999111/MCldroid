@@ -8,7 +8,6 @@ import com.compilesense.liuyi.mcldroid.mcldroid.BaseLayer;
 import com.compilesense.liuyi.mcldroid.mcldroid.ConvolutionLayer;
 import com.compilesense.liuyi.mcldroid.mcldroid.FullyConnectedLayer;
 import com.compilesense.liuyi.mcldroid.mcldroid.LRNLayer;
-import com.compilesense.liuyi.mcldroid.mcldroid.Layer;
 import com.compilesense.liuyi.mcldroid.mcldroid.NetFile;
 import com.compilesense.liuyi.mcldroid.mcldroid.PoolingLayer;
 import com.compilesense.liuyi.mcldroid.mcldroid.SoftmaxLayer;
@@ -16,8 +15,10 @@ import com.compilesense.liuyi.mcldroid.mcldroid.SoftmaxLayer;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Scanner;
 
 /**
@@ -41,9 +42,20 @@ public class ModelInput {
     private int layerNum; //layer层数
     private boolean hadInput = false;
 
-    private List<BaseLayer> layerList = new ArrayList<>();
+    //是否是树状的 net
+    private boolean netTree = false;
+    //用于存放有分支的net,分叉前的last layer
+    private BaseLayer headerLayer;
+    private int branch_off;//这一层叉分出的分支数量
+    private boolean branching = false;//处于分叉的点
+    private int branchBaseKey = -1;//处于分叉时,基点的branchKey
+    //在分叉前 放在 key = -1, 分叉后 key = 0,1...
+    private Map<Integer, BaseLayer> branchLastLayerMap = new HashMap<>();
+
+    private List<BaseLayer> layerList = new ArrayList<>();//用于存放无分支的net
 
     private IHandLayers layersListener;
+
     static {
         Runtime rt=Runtime.getRuntime();
         long maxMemory = rt.maxMemory();//最大申请内存大小
@@ -113,8 +125,15 @@ public class ModelInput {
                     paramSize.add(pf.length());
                 else {
                     String temp = root + fName;
-                    Log.e("CNNdroid", "Error: Missing parameters file \"" + temp + "\"");
+                    Log.e("TAG", "Error: Missing parameters file \"" + temp + "\"");
                     throw new Exception("CNNdroid parameter file does not exist.");
+                }
+
+            } else if (strLow.startsWith(NetFile.RootType.NET_OUTPUT)){
+                if (strLow.contains(NetFile.RootType.NET_OUTPUT_TREE)){
+                    netTree = true;
+                }else {
+                    Log.e("TAG", "Error: parameter: \"" + strLow + "\"");
                 }
 
             }
@@ -176,7 +195,13 @@ public class ModelInput {
         }
 
 
-        layersListener.handLayers(layerNum, layerList);
+        if (netTree){
+            int outSize = (branchLastLayerMap.size() > 1)?(branchLastLayerMap.size() - 1):1;
+            layersListener.handTreeNetHeader(headerLayer, outSize, layerNum);
+        }else {
+            layersListener.handLayers(layerNum, layerList);
+        }
+
 
     }
 
@@ -228,6 +253,7 @@ public class ModelInput {
     }
 
     private boolean deriveLayer(String str) {
+
         String[] strArr = str.split("\n");
 
         strArr[0] = strArr[0].trim();
@@ -261,10 +287,8 @@ public class ModelInput {
                 continue;
             }
 
-            int i1 = strArr[i].indexOf(":");
-            int i2 = strArr[i].indexOf(" ");
-            int j = (i1 < i2) ? i1 : i2;
-            String tempArg = strArr[i].substring(0, j);
+            int j = strArr[i].indexOf(":");
+            String tempArg = strArr[i].substring(0, j).trim();
             String tempValue;
             String temp = strArr[i].substring(j);
             if (temp.contains("\"")){
@@ -282,6 +306,10 @@ public class ModelInput {
                 values.add(tempValue);
             }
         }
+
+
+        BaseLayer currentLayer = null;
+        int branchKey = -1;
 
         //处理卷积层。
         if (type.equalsIgnoreCase(NetFile.LayerType.CONVOLUTION)) {
@@ -305,12 +333,6 @@ public class ModelInput {
             }
             if (parametersFile == null || pad == -1 || stride == -1 || group == -1)
                 return false;
-//            Log.d(TAG,"处理 conv 参数: "+"pad:"+pad+",stride:"+stride+",group:"+group);
-
-            //跳过 conv4-2
-            if (name.equals("conv4-2")){
-                return true;
-            }
 
             ConvolutionLayer convolutionLayer =
                     new ConvolutionLayer(
@@ -322,8 +344,7 @@ public class ModelInput {
                     );
             convolutionLayer.setParamPath(root+parametersFile);
             convolutionLayer.loadParamNative();
-            layerList.add(convolutionLayer);
-            return true;
+            currentLayer = convolutionLayer;
         }
         else if (type.equalsIgnoreCase(NetFile.LayerType.POOLING)) {
             String pool = null;
@@ -341,6 +362,9 @@ public class ModelInput {
                     pad = Integer.parseInt(tempValue);
                 else if (tempArg.equalsIgnoreCase(NetFile.LayerParams.STRIDE))
                     stride = Integer.parseInt(tempValue);
+                else if (netTree && tempArg.equalsIgnoreCase(NetFile.LayerParams.BRANCH_OFF)){
+                    branch_off = Integer.parseInt(tempValue);
+                }
                 else
                     return false;
             }
@@ -354,8 +378,7 @@ public class ModelInput {
                 poolingType = PoolingLayer.TYPE_MEAN;
             }
             PoolingLayer poolingLayer = new PoolingLayer(name, poolingType, pad, stride, kernelSize);
-            layerList.add(poolingLayer);
-            return true;
+            currentLayer = poolingLayer;
         }
         else if (type.equalsIgnoreCase(NetFile.LayerType.LRN)) {
             String normRegion = null;
@@ -380,8 +403,7 @@ public class ModelInput {
                 return false;
 
             LRNLayer lrn =  new LRNLayer(name,localSize, (float) alpha, (float) beta);
-            layerList.add(lrn);
-            return true;
+            currentLayer = lrn;
         }
         else if (type.equalsIgnoreCase(NetFile.LayerType.FULLY_CONNECTED)) {
             String parametersFile = null;
@@ -390,16 +412,19 @@ public class ModelInput {
                 String tempValue = values.get(i);
                 if (tempArg.equalsIgnoreCase(NetFile.LayerParams.PARAM_FILE))
                     parametersFile = tempValue;
-                else
+                else if (tempArg.equalsIgnoreCase(NetFile.LayerParams.BRANCH)){
+                    branchKey = Integer.parseInt(tempValue);
+                }else
                     return false;
             }
             if (parametersFile == null)
                 return false;
+
             FullyConnectedLayer fcLayer = new FullyConnectedLayer(name, false);
             fcLayer.setParamPath(root+parametersFile);
             fcLayer.loadParamNative();
-            layerList.add(fcLayer);
-            return true;
+            currentLayer = fcLayer;
+
         }
         else if (type.equalsIgnoreCase("Accuracy")) {
 //            Log.e(TAG,"Accuracy 不支持");
@@ -425,11 +450,19 @@ public class ModelInput {
             return true;
         }
         else if (type.equalsIgnoreCase(NetFile.LayerType.SOFT_MAX)) {
-            if (args.size() != 0) return false;
+//            if (args.size() != 0) return false;
+            for (int i = 0; i < args.size(); ++i) {
+                String tempArg = args.get(i);
+                String tempValue = values.get(i);
+                if (tempArg.equalsIgnoreCase(NetFile.LayerParams.BRANCH)){
+                    branchKey = Integer.parseInt(tempValue);
+                }else{
+                    return false;
+                }
+            }
 
             SoftmaxLayer softmaxLayer = new SoftmaxLayer(name);
-            layerList.add(softmaxLayer);
-            return true;
+            currentLayer = softmaxLayer;
         }
 
         else if (type.equalsIgnoreCase(NetFile.LayerType.RELU)) {
@@ -446,8 +479,7 @@ public class ModelInput {
 //            }
 
             ActivationLayer activationLayer = new ActivationLayer(name, ActivationLayer.TYPE_RELU);
-            layerList.add(activationLayer);
-            return true;
+            currentLayer = activationLayer;
         }
 
         else if (type.equalsIgnoreCase(NetFile.LayerType.PRELU)){
@@ -455,21 +487,55 @@ public class ModelInput {
             for (int i = 0; i < args.size(); ++i) {
                 String tempArg = args.get(i);
                 String tempValue = values.get(i);
-                if (tempArg.equalsIgnoreCase(NetFile.LayerParams.PARAM_FILE))
+                if (tempArg.equalsIgnoreCase(NetFile.LayerParams.PARAM_FILE)){
                     parametersFile = tempValue;
-                else
+                } else if (netTree && tempArg.equalsIgnoreCase(NetFile.LayerParams.BRANCH_OFF)){
+                    branch_off = Integer.parseInt(tempValue);
+                    branching = true;
+                }else {
                     return false;
+                }
             }
             if (parametersFile == null)
                 return false;
             ActivationLayer activationLayer = new ActivationLayer(name, ActivationLayer.TYPE_PRELU);
             activationLayer.setParamsFilePath(root+parametersFile)
                     .loadParams();
-            layerList.add(activationLayer);
-            return true;
+            currentLayer = activationLayer;
         }
-        else
+        else{
             return false;
+        }
+
+        if (netTree){
+            //设置header
+            if (headerLayer == null){
+                headerLayer = currentLayer;
+            }
+
+            BaseLayer bLastLayer = null;
+
+            if (branch_off == 0){
+                bLastLayer = branchLastLayerMap.get(branchKey);
+
+            }else if (branch_off > 0 && branching){ //net 分叉的点
+                branching = false;
+                branchBaseKey = branchKey;
+                bLastLayer = branchLastLayerMap.get(branchKey);
+
+            }else if (branch_off > 0){ // net 分叉的点后面的分支要设置为 分叉点的 next layer
+                branch_off--;
+                bLastLayer = branchLastLayerMap.get(branchBaseKey);
+            }
+
+            if (bLastLayer != null){
+                bLastLayer.addNextLayer(currentLayer);
+            }
+            branchLastLayerMap.put(branchKey, currentLayer);
+        }else {
+            layerList.add(currentLayer);
+        }
+        return true;
     }
 
     long[] longArray(List<Long> ll) {
@@ -524,5 +590,6 @@ public class ModelInput {
 
     public interface IHandLayers{
         void handLayers(int size, List<BaseLayer> layerList);
+        void handTreeNetHeader(BaseLayer header, int numNetOutput, int numLayer);
     }
 }

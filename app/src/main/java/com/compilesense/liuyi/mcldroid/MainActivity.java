@@ -37,8 +37,9 @@ public class MainActivity extends AppCompatActivity {
     private static final int INPUT_PIC_FIX_SIZE_CAFFE_NET = 227;
     private static final int INPUT_PIC_FIX_SIZE_CIFAR_10 = 32;
     private static final int INPUT_PIC_FIX_SIZE_DET_1 = 12;
+    private static final int INPUT_PIC_FIX_SIZE_DET_2 = 24;
 
-    private int input_fix_size = INPUT_PIC_FIX_SIZE_DET_1;
+    private int input_fix_size = INPUT_PIC_FIX_SIZE_DET_2;
 
     ImageView imageView;
     Bitmap bmp;
